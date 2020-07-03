@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="reception_robot" type="reception_robot" name="reception_robot" output="screen" />
+</launch>
