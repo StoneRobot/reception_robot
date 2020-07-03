@@ -23,6 +23,7 @@ private:
     ros::NodeHandle& nh;
 
     ros::ServiceClient pickClient;
+    ros::ServiceClient fixedPickClient;
     ros::ServiceClient placeClient;
     ros::ServiceClient moveClient;
 

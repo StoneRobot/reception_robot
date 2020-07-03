@@ -4,6 +4,7 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
 :nh{n}
 {
     pickClient = nh.serviceClient<pick_place_bridge::PickPlacePose>("/pick");
+    fixedPickClient = nh.serviceClient<pick_place_bridge::PickPlacePose>("/fixed_pick");
     placeClient = nh.serviceClient<pick_place_bridge::PickPlacePose>("/place");
     moveClient = nh.serviceClient<pick_place_bridge::PickPlacePose>("/move");
 
@@ -90,12 +91,13 @@ void ReceptionRobot::objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg
     transformFrame(pose);
     pick_place_bridge::PickPlacePose pickPose;
     pickPose.request.Pose = pose;
-    pickClient.call(pickPose);
+    // pickClient.call(pickPose);
+    fixedPickClient.call(pickPose);
     pick_place_bridge::PickPlacePose placePose;
     placePose.request.Pose.header.frame_id = "world";
-    placePose.request.Pose.pose.position.x = 0.5;
+    placePose.request.Pose.pose.position.x = 0.80;
     placePose.request.Pose.pose.position.y = 0.0;
-    placePose.request.Pose.pose.position.z = 1.3;
+    placePose.request.Pose.pose.position.z = 1.4;
     placePose.request.Pose.pose.orientation.w = 1;
     moveClient.call(placePose);
 }
