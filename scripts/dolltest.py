@@ -16,7 +16,7 @@ def callback(req):
     pose_object_info = ObjectInfo()
     msg = ObjectArray()
     pose_stamped.header.frame_id = "pick_point"
-    pose_stamped.pose.position.x = 0.2
+    pose_stamped.pose.position.x = 0.25
     pose_stamped.pose.position.y = 0
     pose_stamped.pose.position.z = 0
     pose_stamped.pose.orientation.w = 1
