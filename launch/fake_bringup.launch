@@ -1,3 +1,6 @@
 <launch>
-    <node pkg="reception_robot" type="reception_robot" name="reception_robot" output="screen" />
+    <node pkg="reception_robot" type="reception_robot" name="reception_robot" output="screen" >
+        <param name="detectionPose" type="str" value="$(find reception_robot)/pose/detectionPose.yaml" />
+        <param name="handgesturePose" type="str" value="$(find reception_robot)/pose/handgesturePose.yaml" />
+    </node>
 </launch>

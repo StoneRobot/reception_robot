@@ -236,12 +236,15 @@ include_directories(SYSTEM ${THIS_PACKAGE_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${E
 
 add_executable(reception_robot
   src/ReceptionRobot.cpp
+  src/recordLoadPose.cpp
   include/reception_robot/ReceptionRobot.h
+  include/reception_robot/recordLoadPose.h
   src/main.cpp
 )
 add_dependencies(reception_robot ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(reception_robot
   ${catkin_LIBRARIES}
+  -lyaml-cpp
 )
 
 
