@@ -192,6 +192,7 @@ bool ReceptionRobot::setFiveFightPose(int index)
 
 bool ReceptionRobot::handgesture()
 {
+    ROS_INFO_STREAM("----handgesture begin ----");
     geometry_msgs::PoseStamped targetPose;
     targetPose.header.frame_id = "world";
     targetPose.pose.position.x = 0.80;
@@ -227,5 +228,7 @@ bool ReceptionRobot::handgesture()
         cnt ++;
     }
     ros::WallDuration(1).sleep();
-    system("rostopic pub /back_home std_msgs/Int8 \"data: 0\"");
+    system("rostopic pub -1 /back_home std_msgs/Int8 \"data: 0\"");
+    ROS_INFO_STREAM("----handgesture over ----");
+    return true;
 }
