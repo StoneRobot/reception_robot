@@ -87,6 +87,9 @@ public:
     */
     void pubStatus(bool isFree);
 
+    /**
+     * @brief 回Home点
+    */
     void backHome();
 private:
     recordLoadPose* recordLoadPosePtr;

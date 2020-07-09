@@ -101,7 +101,9 @@ bool ReceptionRobot::handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request
 {
     // handgesture();
     // moveHandgesturePose();
+    pubStatus(BUSY);
     moveHandgesturePose(handgesturePose);
+    pubStatus(!BUSY);
     checkHandgestureLoop();
 	rep.respond = true;
 	return true;
@@ -306,7 +308,6 @@ bool ReceptionRobot::moveHandgesturePose()
 
 bool ReceptionRobot::checkHandgestureLoop()
 {
-    pubStatus(BUSY);
     int flag = 0;
     // 等待阻抗开启(10s),开启退出
     for(int i=0; i<40; ++i)
@@ -336,7 +337,6 @@ bool ReceptionRobot::checkHandgestureLoop()
     }
     setFiveFightPose(HOME);
     flag = 0;
-    pubStatus(!BUSY);
 }
 
 bool ReceptionRobot::handgesture()
