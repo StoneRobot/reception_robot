@@ -16,6 +16,8 @@
 #include "pick_place_bridge/recordPose.h"
 #include "reception_robot/recordLoadPose.h"
 
+#include "reception_robot/listPose.h"
+
 #include "hirop_msgs/ObjectArray.h"
 #include "hirop_msgs/detection.h"
 #include "hirop_msgs/getForce.h"
@@ -77,21 +79,28 @@ public:
     * @return 是否设置成功
     */
     bool setFiveFightPose(int index);
+
+    /**
+     * @brief 发布机器人是否空闲
+     * @param isFree 处于空闲时发True
+    */
+    void pubStatus(bool isFree);
 private:
     recordLoadPose* recordLoadPosePtr;
     ros::NodeHandle& nh;
     // 服务回调
     bool handClawGrabDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
     bool handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
+    bool PointTipServerCallback(reception_robot::listPose::Request& req, reception_robot::listPose::Response& rep);
     // 话题回调
     void pedestrainCallback(const std_msgs::Bool::ConstPtr& msg);
     void objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg);
-    void handgestureCallback(const std_msgs::Bool::ConstPtr& msg);
+    // void handgestureCallback(const std_msgs::Bool::ConstPtr& msg);
     void shakeCallback(const std_msgs::Bool::ConstPtr& msg);
     void HandgestureModeCallback(const std_msgs::Bool::ConstPtr& msg);
     void updataPoseCallback(const std_msgs::Int8::ConstPtr& msg);
 
-    // 客户端 
+    /****** 客户端 ******/
     ros::ServiceClient pickClient;
     ros::ServiceClient fixedPickClient;
     ros::ServiceClient placeClient;
@@ -100,32 +109,60 @@ private:
     ros::ServiceClient getForceClient;
     ros::ServiceClient moveSeqClient;
     ros::ServiceClient getPoseClient;
-    // 服务器
+    /****** 服务器 ******/
+    // 抓娃娃
     ros::ServiceServer handClawGrabDollServer; 
+    // 握手
     ros::ServiceServer handgestureServer;
-    // 订阅
+    // 记录点位的提示
+    ros::ServiceServer PointTipServer;
+
+    /****** 订阅 ******/
+    // 抓取物体抓取姿态
     ros::Subscriber objectArraySub;
+    // 行人检测
     ros::Subscriber pedestrainSub;
-    ros::Subscriber handgestureSub;
+    // 握手信号(嘉辉)
+    // ros::Subscriber handgestureSub;
+    // 是否有人在握手
     ros::Subscriber shakeSub;
+    // 是否要处于握手模式(处于阻抗)
     ros::Subscriber HandgestureModeSub;
+    // 更新检测和握手的点位
     ros::Subscriber updataPose;
-    // 发布
+
+    /****** 发布 ******/
+    // 调解速度
     ros::Publisher speedScalePub;
+    // 从机器人上移除物体
     ros::Publisher detachObjectPub;
+    // 空闲状态发布
+    ros::Publisher freeStatusPub;
+    // 开启阻抗状态(不用)
     ros::Publisher isOpenFollowPub;
+
     // 判断六轴传感器是否有摇动信号
     bool isShake;
+
+    // 是否处于握手模式
     bool HandgestureMode;
+
+    /**** 五指夹爪的Pose的索引,从1开始****/
     const int SHAKE = 1;
     const int GRASP = 2;
     const int OK = 3;
     const int HOME = 4;
     const int SHAKE_PREPARE = 5;
+    // 检测点位存储路径
     std::string detectionPosePath;
+    // 握手点位存储路径
     std::string handgesturePosePath;
+    // 握手点位
     geometry_msgs::PoseStamped handgesturePose;
+    // 检测点位
     geometry_msgs::PoseStamped detectionPose;
+    // 工作信号
+    const bool BUSY = true;
 };
 
 

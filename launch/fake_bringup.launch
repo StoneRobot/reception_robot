@@ -3,4 +3,5 @@
         <param name="detectionPose" type="str" value="$(find reception_robot)/pose/detectionPose.yaml" />
         <param name="handgesturePose" type="str" value="$(find reception_robot)/pose/handgesturePose.yaml" />
     </node>
+    <include file="$(find add_obstacles)/launch/five_fight_sence.launch" />
 </launch>
