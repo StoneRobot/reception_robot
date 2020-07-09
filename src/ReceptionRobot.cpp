@@ -333,6 +333,7 @@ bool ReceptionRobot::checkHandgestureLoop()
     }
     if(!HandgestureMode)
     {
+        ROS_INFO_STREAM("----------------------------" << HandgestureMode << "------------------------");
         backHome();
     }
     setFiveFightPose(HOME);
