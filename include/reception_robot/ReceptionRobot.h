@@ -86,6 +86,8 @@ public:
      * @param isFree 处于空闲时发True
     */
     void pubStatus(bool isFree);
+
+    void backHome();
 private:
     recordLoadPose* recordLoadPosePtr;
     ros::NodeHandle& nh;

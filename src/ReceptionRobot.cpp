@@ -85,10 +85,7 @@ void ReceptionRobot::HandgestureModeCallback(const std_msgs::Bool::ConstPtr& msg
 
 void ReceptionRobot::backHomeCallback(const std_msgs::Int8::ConstPtr& msg)
 {
-    pubStatus(BUSY);
-    std_srvs::Empty srv;
-    backHomeClient.call(srv);
-    pubStatus(!BUSY);
+    backHome();
 }
 
 // 语音触发
@@ -162,7 +159,7 @@ void ReceptionRobot::objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg
     {
         if(!checkForce() || cnt == (timeCnt - 1))
         {
-            system("rostopic pub -1 /back_home std_msgs/Int8 \"data: 0\"");
+            backHome();
             setFiveFightPose(HOME);
             break;
         }
@@ -335,7 +332,7 @@ bool ReceptionRobot::checkHandgestureLoop()
     }
     if(!HandgestureMode)
     {
-        system("rostopic pub -1 /back_home std_msgs/Int8 \"data: 0\"");
+        backHome();
     }
     setFiveFightPose(HOME);
     flag = 0;
@@ -396,4 +393,12 @@ void ReceptionRobot::pubStatus(bool isFree)
     std_msgs::Bool msg;
     msg.data = isFree;
     freeStatusPub.publish(msg);
+}
+
+void ReceptionRobot::backHome()
+{
+    pubStatus(BUSY);
+    std_srvs::Empty srv;
+    backHomeClient.call(srv);
+    pubStatus(!BUSY);
 }
