@@ -51,6 +51,7 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     freeStatusPub = nh.advertise<std_msgs::Bool>("rbCtlBusy_status", 10);
     isShake = false;
     HandgestureMode = false;
+    isShakeOver = false;
 }
 
 ReceptionRobot::~ReceptionRobot()
@@ -180,7 +181,7 @@ void ReceptionRobot::objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg
 
 void ReceptionRobot::shakeOverCallback(const std_msgs::Bool::ConstPtr& msg)
 {
-    isSakeOver = msg->data;
+    isShakeOver = msg->data;
 }
 
 /////////////////// 实现//////////////
@@ -343,8 +344,9 @@ bool ReceptionRobot::checkHandgestureLoop()
     int cnt = 0;
     while (ros::ok())
     {
-        if((!checkForce()&& flag == 1) || cnt == 49 || isSakeOver)
+        if((!checkForce()&& flag == 1) || cnt == 49 || isShakeOver)
         {
+            isShakeOver = false;
             flag = 0;
             setFiveFightPose(HOME);
             ros::WallDuration(2).sleep();

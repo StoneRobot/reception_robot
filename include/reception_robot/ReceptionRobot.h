@@ -172,7 +172,7 @@ private:
     bool HandgestureMode;
 
     // 结束信号
-    bool isSakeOver;
+    bool isShakeOver;
 
     /**** 五指夹爪的Pose的索引,从1开始****/
     const int SHAKE = 1;
