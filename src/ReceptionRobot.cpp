@@ -6,11 +6,13 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     recordLoadPosePtr = new recordLoadPose(nh);
     nh.getParam("/reception_robot/detectionPose", detectionPosePath);
     nh.getParam("/reception_robot/handgesturePose", handgesturePosePath);
+    nh.getParam("/reception_robot/ok", okPosePath);
     try
     {
         /* code */
         recordLoadPosePtr->loadRobotPose(detectionPose, detectionPosePath);
         recordLoadPosePtr->loadRobotPose(handgesturePose, handgesturePosePath);
+        recordLoadPosePtr->loadRobotPose(OKPose, okPosePath);
     }
     catch(const std::exception& e)
     {
@@ -40,6 +42,8 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     HandgestureModeSub = nh.subscribe("uipub_impedenceLive", 10, &ReceptionRobot::HandgestureModeCallback, this);
     updataPoseSub = nh.subscribe("updata_pose", 10, &ReceptionRobot::updataPoseCallback, this);
     backHomeSub = nh.subscribe("homePoint", 10, &ReceptionRobot::backHomeCallback, this);
+    robotStatusSub = nh.subscribe("robot_status", 10, &ReceptionRobot::robotStatusCallback, this);
+    shakeOverSub = nh.subscribe("shake_over", 10, &ReceptionRobot::shakeOverCallback, this);
     // 发布
     speedScalePub = nh.advertise<std_msgs::Bool>("speedScale", 10);
     detachObjectPub = nh.advertise<std_msgs::Empty>("detach_object", 10);
@@ -54,15 +58,6 @@ ReceptionRobot::~ReceptionRobot()
     delete recordLoadPosePtr;
     recordLoadPosePtr = nullptr;
 }
-
-bool ReceptionRobot::handClawGrabDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
-{
-    test();
-    rep.respond = true;
-    return true;
-}
-
-
 
 ///////////////回调//////////////////////
 void ReceptionRobot::pedestrainCallback(const std_msgs::Bool::ConstPtr& msg)
@@ -88,6 +83,13 @@ void ReceptionRobot::backHomeCallback(const std_msgs::Int8::ConstPtr& msg)
     backHome();
 }
 
+void ReceptionRobot::robotStatusCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+    1;
+}
+
+// void
+
 // 语音触发
 // void ReceptionRobot::handgestureCallback(const std_msgs::Bool::ConstPtr& msg)
 // {
@@ -102,7 +104,7 @@ bool ReceptionRobot::handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request
     // handgesture();
     // moveHandgesturePose();
     pubStatus(BUSY);
-    moveHandgesturePose(handgesturePose);
+    movePose(handgesturePose);
     pubStatus(!BUSY);
     checkHandgestureLoop();
 	rep.respond = true;
@@ -125,14 +127,19 @@ void ReceptionRobot::updataPoseCallback(const std_msgs::Int8::ConstPtr& msg)
             recordLoadPosePtr->recordRobotPose(pose, handgesturePosePath);
             handgesturePose = pose;
             break;
+        case 2:
+            recordLoadPosePtr->recordRobotPose(pose, okPosePath);
+            OKPose = pose;
+            break;
     }
 }
 
 bool ReceptionRobot::PointTipServerCallback(reception_robot::listPose::Request& req, reception_robot::listPose::Response& rep)
 {
-    rep.pose.resize(2);
+    rep.pose.resize(3);
     rep.pose[0] = "detection pose index: 0";
     rep.pose[1] = "handgesture pose index: 1";
+    rep.pose[2] = "OK pose index: 2";
     return true;
 }
 
@@ -171,16 +178,26 @@ void ReceptionRobot::objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg
     pubStatus(!BUSY);
 }
 
+void ReceptionRobot::shakeOverCallback(const std_msgs::Bool::ConstPtr& msg)
+{
+    isSakeOver = msg->data;
+}
+
 /////////////////// 实现//////////////
+
+bool ReceptionRobot::handClawGrabDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
+{
+    test();
+    rep.respond = true;
+    return true;
+}
 
 void ReceptionRobot::test()
 {
     if(HandgestureMode)
         return;
     pubStatus(BUSY);
-    std_msgs::Bool msg;
-    msg.data = false;
-    isOpenFollowPub.publish(msg);
+    followSwitch(false);
     pick_place_bridge::PickPlacePose pose;
     // pose.request.Pose.header.frame_id = "world";
     // pose.request.Pose.pose.position.x = 0.0453143;
@@ -281,7 +298,7 @@ bool ReceptionRobot::setFiveFightPose(int index)
     return false;
 }
 
-bool ReceptionRobot::moveHandgesturePose(geometry_msgs::PoseStamped pose)
+bool ReceptionRobot::movePose(geometry_msgs::PoseStamped pose)
 {
     pick_place_bridge::PickPlacePose targetPose;
     targetPose.request.Pose = pose;
@@ -300,15 +317,14 @@ bool ReceptionRobot::moveHandgesturePose()
     targetPose.pose.orientation.w = 1;
     Pose.request.Pose = targetPose;
     moveClient.call(Pose);
-    std_msgs::Bool msg;
-    msg.data = true;
-    isOpenFollowPub.publish(msg);
+    followSwitch(true);
     return Pose.response.result;
 }
 
 bool ReceptionRobot::checkHandgestureLoop()
 {
     int flag = 0;
+    followSwitch(true);
     // 等待阻抗开启(10s),开启退出
     for(int i=0; i<40; ++i)
     {
@@ -318,22 +334,31 @@ bool ReceptionRobot::checkHandgestureLoop()
     }
     while (ros::ok() && HandgestureMode)
     {
-        if((checkForce() || isShake) && flag == 0)
+        if((checkForce() && flag == 0))
         {
             flag = 1;
-            ROS_INFO_STREAM("set five fight pose: " << SHAKE);
             setFiveFightPose(SHAKE);
         }
-        if((!checkForce() || !isShake) && flag == 1)
+    }
+    int cnt = 0;
+    while (ros::ok())
+    {
+        if((!checkForce()&& flag == 1) || cnt == 49 || isSakeOver)
         {
             flag = 0;
-            ROS_INFO_STREAM("set five fight pose: " << HOME);
             setFiveFightPose(HOME);
+            ros::WallDuration(2).sleep();
+            break;
         }
+        ++cnt;
     }
+    followSwitch(false);
     if(!HandgestureMode)
     {
         ROS_INFO_STREAM("----------------------------" << HandgestureMode << "------------------------");
+        setFiveFightPose(OK);
+        movePose(OKPose);
+        ros::WallDuration(3.0).sleep();
         backHome();
     }
     setFiveFightPose(HOME);
@@ -402,4 +427,11 @@ void ReceptionRobot::backHome()
     std_srvs::Empty srv;
     backHomeClient.call(srv);
     pubStatus(!BUSY);
+}
+
+void ReceptionRobot::followSwitch(bool onOff)
+{
+    std_msgs::Bool msg;
+    msg.data = onOff;
+    isOpenFollowPub.publish(msg);
 }

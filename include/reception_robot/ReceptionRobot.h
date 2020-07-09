@@ -44,7 +44,7 @@ public:
      * @brief 去到机器人握手的姿势
      * @param pose 握手的姿态
     */
-    bool moveHandgesturePose(geometry_msgs::PoseStamped pose);
+    bool movePose(geometry_msgs::PoseStamped pose);
 
     /**
      * @brief 去到机器人握手的姿势
@@ -91,6 +91,13 @@ public:
      * @brief 回Home点
     */
     void backHome();
+
+    /**
+     *  @brief 随动的开关
+     *  @param true为开
+    */
+    void followSwitch(bool onOff);
+    
 private:
     recordLoadPose* recordLoadPosePtr;
     ros::NodeHandle& nh;
@@ -106,6 +113,8 @@ private:
     void HandgestureModeCallback(const std_msgs::Bool::ConstPtr& msg);
     void updataPoseCallback(const std_msgs::Int8::ConstPtr& msg);
     void backHomeCallback(const std_msgs::Int8::ConstPtr& msg);
+    void robotStatusCallback(const std_msgs::Bool::ConstPtr& msg);
+    void shakeOverCallback(const std_msgs::Bool::ConstPtr& msg);
 
     /****** 客户端 ******/
     ros::ServiceClient pickClient;
@@ -140,6 +149,10 @@ private:
     ros::Subscriber updataPoseSub;
     // 中转,获取繁忙信号
     ros::Subscriber backHomeSub;
+    // 订阅机器人状态
+    ros::Subscriber robotStatusSub;
+    ros::Subscriber shakeOverSub;
+
 
     /****** 发布 ******/
     // 调解速度
@@ -158,6 +171,9 @@ private:
     // 是否处于握手模式
     bool HandgestureMode;
 
+    // 结束信号
+    bool isSakeOver;
+
     /**** 五指夹爪的Pose的索引,从1开始****/
     const int SHAKE = 1;
     const int GRASP = 2;
@@ -168,10 +184,14 @@ private:
     std::string detectionPosePath;
     // 握手点位存储路径
     std::string handgesturePosePath;
-    // 握手点位
-    geometry_msgs::PoseStamped handgesturePose;
+    // OK 点位路径
+    std::string okPosePath;
     // 检测点位
     geometry_msgs::PoseStamped detectionPose;
+    // 握手点位
+    geometry_msgs::PoseStamped handgesturePose;
+    // OK点位
+    geometry_msgs::PoseStamped OKPose;
     // 工作信号
     const bool BUSY = true;
 };
