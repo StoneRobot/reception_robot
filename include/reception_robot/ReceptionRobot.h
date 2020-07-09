@@ -5,6 +5,7 @@
 #include <tf/transform_listener.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Bool.h>
+#include <std_srvs/Empty.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -99,6 +100,7 @@ private:
     void shakeCallback(const std_msgs::Bool::ConstPtr& msg);
     void HandgestureModeCallback(const std_msgs::Bool::ConstPtr& msg);
     void updataPoseCallback(const std_msgs::Int8::ConstPtr& msg);
+    void backHomeCallback(const std_msgs::Int8::ConstPtr& msg);
 
     /****** 客户端 ******/
     ros::ServiceClient pickClient;
@@ -109,6 +111,7 @@ private:
     ros::ServiceClient getForceClient;
     ros::ServiceClient moveSeqClient;
     ros::ServiceClient getPoseClient;
+    ros::ServiceClient backHomeClient;
     /****** 服务器 ******/
     // 抓娃娃
     ros::ServiceServer handClawGrabDollServer; 
@@ -129,7 +132,9 @@ private:
     // 是否要处于握手模式(处于阻抗)
     ros::Subscriber HandgestureModeSub;
     // 更新检测和握手的点位
-    ros::Subscriber updataPose;
+    ros::Subscriber updataPoseSub;
+    // 中转,获取繁忙信号
+    ros::Subscriber backHomeSub;
 
     /****** 发布 ******/
     // 调解速度
@@ -140,6 +145,7 @@ private:
     ros::Publisher freeStatusPub;
     // 开启阻抗状态(不用)
     ros::Publisher isOpenFollowPub;
+
 
     // 判断六轴传感器是否有摇动信号
     bool isShake;

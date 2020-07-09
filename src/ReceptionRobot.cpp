@@ -27,6 +27,7 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     getForceClient = nh.serviceClient<hirop_msgs::getForce>("getForce");
     moveSeqClient = nh.serviceClient<hirop_msgs::moveSeqIndex>("moveSeq");
     getPoseClient = nh.serviceClient<pick_place_bridge::recordPose>("recordPose");
+    backHomeClient = nh.serviceClient<std_srvs::Empty>("back_home");
     // 服务
     handClawGrabDollServer = nh.advertiseService("handClaw_grabDoll", &ReceptionRobot::handClawGrabDollCallback, this);
     handgestureServer = nh.advertiseService("handClaw_shakeHand", &ReceptionRobot::handgestureSerCallback, this);
@@ -37,7 +38,8 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     // handgestureSub = nh.subscribe("/handgesture_detection", 10, &ReceptionRobot::handgestureCallback, this);
     shakeSub = nh.subscribe("isShake", 10, &ReceptionRobot::shakeCallback, this);
     HandgestureModeSub = nh.subscribe("uipub_impedenceLive", 10, &ReceptionRobot::HandgestureModeCallback, this);
-    updataPose = nh.subscribe("updata_pose", 10, &ReceptionRobot::updataPoseCallback, this);
+    updataPoseSub = nh.subscribe("updata_pose", 10, &ReceptionRobot::updataPoseCallback, this);
+    backHomeSub = nh.subscribe("homePoint", 10, &ReceptionRobot::backHomeCallback, this);
     // 发布
     speedScalePub = nh.advertise<std_msgs::Bool>("speedScale", 10);
     detachObjectPub = nh.advertise<std_msgs::Empty>("detach_object", 10);
@@ -79,6 +81,14 @@ void ReceptionRobot::shakeCallback(const std_msgs::Bool::ConstPtr& msg)
 void ReceptionRobot::HandgestureModeCallback(const std_msgs::Bool::ConstPtr& msg)
 {
     HandgestureMode = msg->data;
+}
+
+void ReceptionRobot::backHomeCallback(const std_msgs::Int8::ConstPtr& msg)
+{
+    pubStatus(BUSY);
+    std_srvs::Empty srv;
+    backHomeClient.call(srv);
+    pubStatus(!BUSY);
 }
 
 // 语音触发
@@ -322,6 +332,10 @@ bool ReceptionRobot::checkHandgestureLoop()
             ROS_INFO_STREAM("set five fight pose: " << HOME);
             setFiveFightPose(HOME);
         }
+    }
+    if(!HandgestureMode)
+    {
+        system("rostopic pub -1 /back_home std_msgs/Int8 \"data: 0\"");
     }
     setFiveFightPose(HOME);
     flag = 0;
