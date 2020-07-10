@@ -174,12 +174,16 @@ private:
     // 结束信号
     bool isShakeOver;
 
+    // 机器人故障状态
+    bool robotStatus;
+
     /**** 五指夹爪的Pose的索引,从1开始****/
     const int SHAKE = 1;
     const int GRASP = 2;
     const int OK = 3;
     const int HOME = 4;
     const int SHAKE_PREPARE = 5;
+    /**** 点位路径 ****/
     // 检测点位存储路径
     std::string detectionPosePath;
     // 握手点位存储路径
