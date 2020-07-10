@@ -99,12 +99,16 @@ public:
     void followSwitch(bool onOff);
     
 private:
+
+    void actionGrasp();
+
     recordLoadPose* recordLoadPosePtr;
     ros::NodeHandle& nh;
     // 服务回调
     bool handClawGrabDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
     bool handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
     bool PointTipServerCallback(reception_robot::listPose::Request& req, reception_robot::listPose::Response& rep);
+    bool handDetectionDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
     // 话题回调
     void pedestrainCallback(const std_msgs::Bool::ConstPtr& msg);
     void objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg);
@@ -127,6 +131,8 @@ private:
     ros::ServiceClient getPoseClient;
     ros::ServiceClient backHomeClient;
     /****** 服务器 ******/
+    // 检测
+    ros::ServiceServer handDetectionDollServer;
     // 抓娃娃
     ros::ServiceServer handClawGrabDollServer; 
     // 握手
@@ -183,6 +189,7 @@ private:
     const int OK = 3;
     const int HOME = 4;
     const int SHAKE_PREPARE = 5;
+    const int TAKE_PHOTO = 6;
     /**** 点位路径 ****/
     // 检测点位存储路径
     std::string detectionPosePath;
@@ -198,6 +205,7 @@ private:
     geometry_msgs::PoseStamped OKPose;
     // 工作信号
     const bool BUSY = true;
+    std::vector<hirop_msgs::ObjectInfo> objectPose;
 };
 
 

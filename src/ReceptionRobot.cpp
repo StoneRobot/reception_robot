@@ -34,6 +34,7 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     handClawGrabDollServer = nh.advertiseService("handClaw_grabDoll", &ReceptionRobot::handClawGrabDollCallback, this);
     handgestureServer = nh.advertiseService("handClaw_shakeHand", &ReceptionRobot::handgestureSerCallback, this);
     PointTipServer = nh.advertiseService("list_point",  &ReceptionRobot::PointTipServerCallback, this);
+    handDetectionDollServer = nh.advertiseService("handClaw_detectDoll", &ReceptionRobot::handDetectionDollCallback, this);
     // 订阅
     objectArraySub = nh.subscribe<hirop_msgs::ObjectArray>("object_array", 1, &ReceptionRobot::objectCallBack, this);
     pedestrainSub = nh.subscribe("/pedestrian_detection", 10, &ReceptionRobot::pedestrainCallback, this);
@@ -113,6 +114,11 @@ bool ReceptionRobot::handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request
 	return true;
 }
 
+bool ReceptionRobot::handDetectionDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
+{
+    test();
+}
+
 void ReceptionRobot::updataPoseCallback(const std_msgs::Int8::ConstPtr& msg)
 {
     geometry_msgs::PoseStamped pose;
@@ -147,35 +153,49 @@ bool ReceptionRobot::PointTipServerCallback(reception_robot::listPose::Request& 
 
 void ReceptionRobot::objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg)
 {
+
+    std::vector<hirop_msgs::ObjectInfo>().swap(objectPose);
+    for(int i=0; i < msg->objects.size(); ++i)
+    {
+        // objectPose.append(msg->objects[i]);
+    }
+}
+
+void ReceptionRobot::actionGrasp()
+{
     ros::WallDuration(0.5).sleep();
     pubStatus(BUSY);
-    geometry_msgs::PoseStamped pose = msg->objects[0].pose;
-    transformFrame(pose, "world");
-    pick_place_bridge::PickPlacePose pickPose;
-    pickPose.request.Pose = pose;
-    pickClient.call(pickPose);
-    // fixedPickClient.call(pickPose);
-    pick_place_bridge::PickPlacePose placePose;
-    placePose.request.Pose.header.frame_id = "world";
-    placePose.request.Pose.pose.position.x = 0.80;
-    placePose.request.Pose.pose.position.y = 0.0;
-    placePose.request.Pose.pose.position.z = 1.4;
-    placePose.request.Pose.pose.orientation.w = 1;
-    moveClient.call(placePose);
-    std_msgs::Empty emptryMsg;
-    detachObjectPub.publish(emptryMsg);
-    int cnt = 0;
-    int timeCnt = 40;
-    while (cnt < timeCnt)
+    for(int i=0; i<objectPose.size(); ++i)
     {
-        if(!checkForce() || cnt == (timeCnt - 1))
+        geometry_msgs::PoseStamped pose = objectPose[0].pose;
+        transformFrame(pose, "world");
+        pick_place_bridge::PickPlacePose pickPose;
+        pickPose.request.Pose = pose;
+        pickClient.call(pickPose);
+        // fixedPickClient.call(pickPose);
+        pick_place_bridge::PickPlacePose placePose;
+        placePose.request.Pose.header.frame_id = "world";
+        placePose.request.Pose.pose.position.x = 0.80;
+        placePose.request.Pose.pose.position.y = 0.0;
+        placePose.request.Pose.pose.position.z = 1.4;
+        placePose.request.Pose.pose.orientation.w = 1;
+        moveClient.call(placePose);
+        std_msgs::Empty emptryMsg;
+        detachObjectPub.publish(emptryMsg);
+        int cnt = 0;
+        int timeCnt = 40;
+        while (cnt < timeCnt)
         {
-            backHome();
-            setFiveFightPose(HOME);
-            break;
+            if(!checkForce() || cnt == (timeCnt - 1))
+            {
+                backHome();
+                setFiveFightPose(HOME);
+                break;
+            }
+            cnt++;
+            ros::WallDuration(0.25).sleep();
         }
-        cnt++;
-        ros::WallDuration(0.25).sleep();
+
     }
     pubStatus(!BUSY);
 }
@@ -199,6 +219,7 @@ void ReceptionRobot::test()
     if(HandgestureMode)
         return;
     pubStatus(BUSY);
+    setFiveFightPose(TAKE_PHOTO);
     followSwitch(false);
     pick_place_bridge::PickPlacePose pose;
     // pose.request.Pose.header.frame_id = "world";
@@ -215,9 +236,10 @@ void ReceptionRobot::test()
     hirop_msgs::detection d;
     d.request.detectorName = "Yolo6d";
     d.request.detectorType = 1;
-    d.request.objectName = "doll";
+    d.request.objectName = "toy1";
     detectionClient.call(d);
     pubStatus(!BUSY);
+    setFiveFightPose(HOME);
 }
 
 bool ReceptionRobot::transformFrame(geometry_msgs::PoseStamped& poseStamped, std::string frame_id="world")
@@ -267,17 +289,20 @@ bool ReceptionRobot::checkForce()
 {
     hirop_msgs::getForce srv;
     getForceClient.call(srv);
+    std::vector<int> force = srv.response.finger_force;
+    ROS_INFO_STREAM("force : "<<" " <<force[0]<<" " <<force[1]<<" " <<force[2]<<" " <<force[3]<<" " <<force[4]<<" " <<force[5]);
     for(int i=0; i < srv.response.finger_force.size(); ++i)
     {
+        // ROS_INFO_STREAM("i: " << srv.response.finger_force[i]);
         if(i < 4)
         {
-            srv.response.finger_force[i] > 50;
-            return true;
+            if(srv.response.finger_force[i] > 50)
+                return true;
         }
         else
         {
-            srv.response.finger_force[i] > 90;
-            return true;
+            if(srv.response.finger_force[i] > 90)
+                return true;
         }
     }
     return false;
@@ -327,24 +352,34 @@ bool ReceptionRobot::checkHandgestureLoop()
 {
     int flag = 0;
     followSwitch(true);
-    // 等待阻抗开启(10s),开启退出
+    // 等待阻抗开启(10s),开启退出,
     for(int i=0; i<40; ++i)
     {
         if(HandgestureMode)
         {
-            backHome();
             break;
+        }
+        if(i == 39)
+        {
+            backHome();
+            return false;
         }
         ros::WallDuration(0.25).sleep();
     }
+    setFiveFightPose(SHAKE_PREPARE);
     while (ros::ok() && HandgestureMode)
     {
-        if((checkForce() && flag == 0))
+        if(checkForce() && flag == 0)
         {
             flag = 1;
+            ROS_INFO_STREAM("setFiveFightPose ...");
             setFiveFightPose(SHAKE);
+            // break;
         }
+
     }
+    ROS_INFO_STREAM("exit setFiveFightPose ...");
+
     int cnt = 0;
     while (ros::ok())
     {
