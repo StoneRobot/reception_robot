@@ -52,6 +52,7 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     isShake = false;
     HandgestureMode = false;
     isShakeOver = false;
+    robotStatus = true;
 }
 
 ReceptionRobot::~ReceptionRobot()
@@ -86,7 +87,7 @@ void ReceptionRobot::backHomeCallback(const std_msgs::Int8::ConstPtr& msg)
 
 void ReceptionRobot::robotStatusCallback(const std_msgs::Bool::ConstPtr& msg)
 {
-    1;
+    robotStatus = msg->data;
 }
 
 // void
@@ -330,7 +331,10 @@ bool ReceptionRobot::checkHandgestureLoop()
     for(int i=0; i<40; ++i)
     {
         if(HandgestureMode)
+        {
+            backHome();
             break;
+        }
         ros::WallDuration(0.25).sleep();
     }
     while (ros::ok() && HandgestureMode)
@@ -355,7 +359,7 @@ bool ReceptionRobot::checkHandgestureLoop()
         ++cnt;
     }
     followSwitch(false);
-    if(!HandgestureMode)
+    if(!HandgestureMode && robotStatus)
     {
         ROS_INFO_STREAM("----------------------------" << HandgestureMode << "------------------------");
         setFiveFightPose(OK);
