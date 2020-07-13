@@ -107,6 +107,15 @@ bool ReceptionRobot::handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request
 bool ReceptionRobot::handDetectionDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
 {
     test();
+    rep.respond = true;
+    return true;
+}
+
+bool ReceptionRobot::handClawGrabDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
+{
+    actionGrasp();
+    rep.respond = true;
+    return true;
 }
 
 void ReceptionRobot::updataPoseCallback(const std_msgs::Int8::ConstPtr& msg)
@@ -149,6 +158,7 @@ void ReceptionRobot::objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg
     for(int i=0; i < msg->objects.size(); ++i)
     {
         objectPose[i] = msg->objects[i];
+        
     }
 }
 
@@ -200,12 +210,7 @@ void ReceptionRobot::shakeOverCallback(const std_msgs::Bool::ConstPtr& msg)
 
 /////////////////// 实现//////////////
 
-bool ReceptionRobot::handClawGrabDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
-{
-    test();
-    rep.respond = true;
-    return true;
-}
+
 
 void ReceptionRobot::test()
 {
@@ -277,7 +282,7 @@ bool ReceptionRobot::checkForce()
     try
     {
         std::vector<int> force = srv.response.finger_force;
-        ROS_INFO_STREAM("force : "<<" " <<force[0]<<" " <<force[1]<<" " <<force[2]<<" " <<force[3]<<" " <<force[4]<<" " <<force[5]);
+        // ROS_INFO_STREAM("force : "<<" " <<force[0]<<" " <<force[1]<<" " <<force[2]<<" " <<force[3]<<" " <<force[4]<<" " <<force[5]);
         for(int i=0; i < srv.response.finger_force.size(); ++i)
         {
             if(i < 4)
