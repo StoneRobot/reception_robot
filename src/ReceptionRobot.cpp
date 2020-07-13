@@ -375,8 +375,8 @@ bool ReceptionRobot::checkHandgestureLoop()
     // 等待结束
     while (ros::ok())
     {
-        // 五指全部没感受到力矩 !checkForce() ||  || 超时10s || 六轴没有力矩 || 退出握手模式
-        if(cnt == 40 || isShakeOver || !HandgestureMode)
+        // 五指全部没感受到力矩 !checkForce() ||  || 超时10s || 六轴没有力矩 || 退出握手模式 cnt == 40 || isShakeOver || 
+        if(!HandgestureMode)
         {
             isShakeOver = false;
             setFiveFightPose(HOME);
