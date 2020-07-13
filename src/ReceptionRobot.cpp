@@ -174,30 +174,59 @@ void ReceptionRobot::actionGrasp()
         pick_place_bridge::PickPlacePose pickPose;
         // 调用Pick
         pickPose.request.Pose = pose;
+        // pickPose.request.Pose.header.frame_id = "world";
+        // pickPose.request.Pose.pose.position.x = 0.236844;
+        // pickPose.request.Pose.pose.position.y = -0.403213;
+        // pickPose.request.Pose.pose.position.z = 1.36805;
+        // pickPose.request.Pose.pose.orientation.x = -0.0144055;
+        // pickPose.request.Pose.pose.orientation.y = -0.00911873;
+        // pickPose.request.Pose.pose.orientation.z = 0.0931309;
+        // pickPose.request.Pose.pose.orientation.w = 0.995507;
         pickClient.call(pickPose);
         // fixedPickClient.call(pickPose);
         pick_place_bridge::PickPlacePose placePose;
         placePose.request.Pose.header.frame_id = "world";
-        placePose.request.Pose.pose.position.x = 0.80;
-        placePose.request.Pose.pose.position.y = 0.0;
-        placePose.request.Pose.pose.position.z = 1.4;
-        placePose.request.Pose.pose.orientation.w = 1;
-        moveClient.call(placePose);
-        std_msgs::Empty emptryMsg;
-        detachObjectPub.publish(emptryMsg);
-        int cnt = 0;
-        int timeCnt = 40;
-        while (ros::ok())
-        {
-            if(!checkForce() || cnt == (timeCnt - 1))
-            {
-                backHome();
-                setFiveFightPose(HOME);
-                break;
-            }
-            cnt++;
-            ros::WallDuration(0.25).sleep();
-        }
+        placePose.request.Pose.pose.position.x = 0.379353;
+        placePose.request.Pose.pose.position.y = 0.687491;
+        placePose.request.Pose.pose.position.z = 1.45898;
+        // placePose.request.Pose.pose.orientation.x = 0.0282123;
+        // placePose.request.Pose.pose.orientation.y = 0.0537069;
+        // placePose.request.Pose.pose.orientation.z = 0.704343;
+        // placePose.request.Pose.pose.orientation.w = 0.707263;
+        placePose.request.Pose.pose.orientation.x = 0.0426387;
+        placePose.request.Pose.pose.orientation.y = 0.0432133;
+        placePose.request.Pose.pose.orientation.z = 0.88249;
+        placePose.request.Pose.pose.orientation.w = 0.466398;
+
+        // placePose.request.Pose.pose.position.x = 0.95;
+        // placePose.request.Pose.pose.position.y = -0.20;
+        // placePose.request.Pose.pose.position.z = 1.51;
+        // placePose.request.Pose.pose.orientation.x = -0.038076;
+        // placePose.request.Pose.pose.orientation.y = 0.0136285;
+        // placePose.request.Pose.pose.orientation.z = -0.0250326;
+        // placePose.request.Pose.pose.orientation.w = 0.998868;
+
+        // moveClient.call(placePose);
+        // pick_place_bridge::PickPlacePose srv;
+        // std_msgs::Empty emptryMsg;
+        // detachObjectPub.publish(emptryMsg);
+        placeClient.call(placePose);
+
+        backHome();
+        setFiveFightPose(HOME);
+
+        // int cnt = 0;
+        // int timeCnt = 40;
+        // while (ros::ok())
+        // {
+        //     // !checkForce() || 
+        //     if(cnt == (timeCnt - 1))
+        //     {
+        //         break;
+        //     }
+        //     cnt++;
+        //     ros::WallDuration(0.25).sleep();
+        // }
 
     }
     pubStatus(!BUSY);
@@ -351,19 +380,20 @@ bool ReceptionRobot::checkHandgestureLoop()
 {
     followSwitch(true);
     // 等待阻抗开启(10s),开启退出,
-    for(int i=0; i<40; ++i)
-    {
-        if(HandgestureMode)
-        {
-            break;
-        }
-        if(i == 39)
-        {
-            backHome();
-            return false;
-        }
-        ros::WallDuration(0.25).sleep();
-    }
+    // for(int i=0; i<40; ++i)
+    // {
+    //     if(HandgestureMode)
+    //     {
+    //         break;
+    //     }
+    //     if(i == 39)
+    //     {
+    //         backHome();
+    //         return false;
+    //     }
+    //     ros::WallDuration(0.25).sleep();
+    // }
+    while(ros::ok() && !HandgestureMode);
     setFiveFightPose(SHAKE_PREPARE);
     // 等待握手
     // while (ros::ok() && HandgestureMode)
