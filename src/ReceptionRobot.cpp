@@ -91,16 +91,6 @@ void ReceptionRobot::robotStatusCallback(const std_msgs::Bool::ConstPtr& msg)
     robotStatus = msg->data;
 }
 
-// void
-
-// 语音触发
-// void ReceptionRobot::handgestureCallback(const std_msgs::Bool::ConstPtr& msg)
-// {
-//     // handgesture();
-//     moveHandgesturePose();
-//     checkHandgestureLoop();
-// }
-
 // UI触发
 bool ReceptionRobot::handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
 {
@@ -155,9 +145,10 @@ void ReceptionRobot::objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg
 {
 
     std::vector<hirop_msgs::ObjectInfo>().swap(objectPose);
+    objectPose.resize(msg->objects.size());
     for(int i=0; i < msg->objects.size(); ++i)
     {
-        // objectPose.append(msg->objects[i]);
+        objectPose[i] = msg->objects[i];
     }
 }
 
@@ -167,9 +158,11 @@ void ReceptionRobot::actionGrasp()
     pubStatus(BUSY);
     for(int i=0; i<objectPose.size(); ++i)
     {
+        // 坐标转换
         geometry_msgs::PoseStamped pose = objectPose[0].pose;
         transformFrame(pose, "world");
         pick_place_bridge::PickPlacePose pickPose;
+        // 调用Pick
         pickPose.request.Pose = pose;
         pickClient.call(pickPose);
         // fixedPickClient.call(pickPose);
@@ -184,7 +177,7 @@ void ReceptionRobot::actionGrasp()
         detachObjectPub.publish(emptryMsg);
         int cnt = 0;
         int timeCnt = 40;
-        while (cnt < timeCnt)
+        while (ros::ok())
         {
             if(!checkForce() || cnt == (timeCnt - 1))
             {
@@ -222,15 +215,7 @@ void ReceptionRobot::test()
     setFiveFightPose(TAKE_PHOTO);
     followSwitch(false);
     pick_place_bridge::PickPlacePose pose;
-    // pose.request.Pose.header.frame_id = "world";
-    // pose.request.Pose.pose.position.x = 0.0453143;
-    // pose.request.Pose.pose.position.y = -0.838108;
-    // pose.request.Pose.pose.position.z = 1.50026;
 
-    // pose.request.Pose.pose.orientation.x = 0.248138;
-    // pose.request.Pose.pose.orientation.y = 0.312854;
-    // pose.request.Pose.pose.orientation.z = -0.590081;
-    // pose.request.Pose.pose.orientation.w = 0.70168;
     pose.request.Pose = detectionPose;
     moveClient.call(pose);
     hirop_msgs::detection d;
@@ -289,21 +274,29 @@ bool ReceptionRobot::checkForce()
 {
     hirop_msgs::getForce srv;
     getForceClient.call(srv);
-    std::vector<int> force = srv.response.finger_force;
-    ROS_INFO_STREAM("force : "<<" " <<force[0]<<" " <<force[1]<<" " <<force[2]<<" " <<force[3]<<" " <<force[4]<<" " <<force[5]);
-    for(int i=0; i < srv.response.finger_force.size(); ++i)
+    try
     {
-        // ROS_INFO_STREAM("i: " << srv.response.finger_force[i]);
-        if(i < 4)
+        std::vector<int> force = srv.response.finger_force;
+        ROS_INFO_STREAM("force : "<<" " <<force[0]<<" " <<force[1]<<" " <<force[2]<<" " <<force[3]<<" " <<force[4]<<" " <<force[5]);
+        for(int i=0; i < srv.response.finger_force.size(); ++i)
         {
-            if(srv.response.finger_force[i] > 50)
-                return true;
+            if(i < 4)
+            {
+                if(srv.response.finger_force[i] > 50)
+                    return true;
+            }
+            else
+            {
+                if(srv.response.finger_force[i] > 90)
+                    return true;
+            }
         }
-        else
-        {
-            if(srv.response.finger_force[i] > 90)
-                return true;
-        }
+    }
+    catch(const std::exception& e)
+    {
+        std::cerr << e.what() << '\n';
+        ROS_INFO_STREAM("check five finger node");
+        return false;
     }
     return false;
 }
@@ -348,9 +341,9 @@ bool ReceptionRobot::moveHandgesturePose()
     return Pose.response.result;
 }
 
+
 bool ReceptionRobot::checkHandgestureLoop()
 {
-    int flag = 0;
     followSwitch(true);
     // 等待阻抗开启(10s),开启退出,
     for(int i=0; i<40; ++i)
@@ -367,43 +360,49 @@ bool ReceptionRobot::checkHandgestureLoop()
         ros::WallDuration(0.25).sleep();
     }
     setFiveFightPose(SHAKE_PREPARE);
-    while (ros::ok() && HandgestureMode)
-    {
-        if(checkForce() && flag == 0)
-        {
-            flag = 1;
-            ROS_INFO_STREAM("setFiveFightPose ...");
-            setFiveFightPose(SHAKE);
-            // break;
-        }
-
-    }
-    ROS_INFO_STREAM("exit setFiveFightPose ...");
-
+    // 等待握手
+    // while (ros::ok() && HandgestureMode)
+    // {
+    //     if(checkForce())
+    //     {
+    //         ROS_INFO_STREAM("setFiveFightPose ...");
+    //         // setFiveFightPose(SHAKE);
+    //         break;
+    //     }
+    //     ros::WallDuration(0.25).sleep();
+    // }
     int cnt = 0;
+    // 等待结束
     while (ros::ok())
     {
-        if((!checkForce()&& flag == 1) || cnt == 49 || isShakeOver)
+        // 五指全部没感受到力矩 !checkForce() ||  || 超时10s || 六轴没有力矩 || 退出握手模式
+        if(cnt == 40 || isShakeOver || !HandgestureMode)
         {
             isShakeOver = false;
-            flag = 0;
             setFiveFightPose(HOME);
             ros::WallDuration(2).sleep();
+            ROS_INFO_STREAM("exit setFiveFightPose ...");
             break;
         }
+        ros::WallDuration(0.25).sleep();
         ++cnt;
     }
     followSwitch(false);
-    if(!HandgestureMode && robotStatus)
+    // 等待退出握手模式, 且机器人状态正常
+    for(int j=0; j<40; ++j)
     {
-        ROS_INFO_STREAM("----------------------------" << HandgestureMode << "------------------------");
-        setFiveFightPose(OK);
-        movePose(OKPose);
-        ros::WallDuration(3.0).sleep();
-        backHome();
+        if(!HandgestureMode && robotStatus)
+        {
+            setFiveFightPose(OK);
+            movePose(OKPose);
+            ros::WallDuration(3.0).sleep();
+            backHome();
+            setFiveFightPose(HOME);
+            return true;
+        }
+        ros::WallDuration(0.25).sleep();
     }
-    setFiveFightPose(HOME);
-    flag = 0;
+    return false;
 }
 
 bool ReceptionRobot::handgesture()
@@ -424,11 +423,11 @@ bool ReceptionRobot::handgesture()
     int timeCnt = 12;
     while (cnt < timeCnt)
     {
-        // 力量大于阈值, 或者六轴传感器有数据波动, 或者超过3S, 闭合
+        // 力量大于阈值 || 六轴传感器有数据波动 || 超过3S
         if(checkForce() || isShake || cnt == (timeCnt - 1))
         {
-            ROS_INFO_STREAM("set five fight pose: " << SHAKE);
-            setFiveFightPose(SHAKE);
+            // ROS_INFO_STREAM("set five fight pose: " << SHAKE);
+            // setFiveFightPose(SHAKE);
             break;
         }
         ros::WallDuration(0.25).sleep();
@@ -438,7 +437,7 @@ bool ReceptionRobot::handgesture()
     timeCnt = 16;
     while (cnt < 16)
     {
-        // 力量小于于阈值, 或者六轴传感器有数据无波动, 或者超过4S, 打开
+        // 五指没有感受到力 || 六轴传感器有数据无波动 || 超过4S
         if(!checkForce() || !isShake || cnt == (timeCnt - 1))
         {
             ROS_INFO_STREAM("set five fight pose: " << HOME);

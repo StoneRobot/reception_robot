@@ -69,7 +69,7 @@ public:
 
     /**
      * @brief 检查五指力矩是否超过阈值
-     * @return 如果超过返回true
+     * @return 如果超过返回true, 没力或者没开五指夹爪Node为false
     */
     bool checkForce();
 
@@ -184,7 +184,7 @@ private:
     bool robotStatus;
 
     /**** 五指夹爪的Pose的索引,从1开始****/
-    const int SHAKE = 1;
+    // const int SHAKE = 1;
     const int GRASP = 2;
     const int OK = 3;
     const int HOME = 4;
@@ -197,8 +197,10 @@ private:
     std::string handgesturePosePath;
     // OK 点位路径
     std::string okPosePath;
+
     // 检测点位
     geometry_msgs::PoseStamped detectionPose;
+    //
     // 握手点位
     geometry_msgs::PoseStamped handgesturePose;
     // OK点位
