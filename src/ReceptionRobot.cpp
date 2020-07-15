@@ -174,6 +174,18 @@ void ReceptionRobot::actionGrasp()
         pick_place_bridge::PickPlacePose pickPose;
         // 调用Pick
         pickPose.request.Pose = pose;
+
+
+        pickPose.request.Pose.header.frame_id = "world";
+        pickPose.request.Pose.pose.position.x = 0.576525;
+        pickPose.request.Pose.pose.position.y = -0.357523;
+        pickPose.request.Pose.pose.position.z = 1.24766;
+        pickPose.request.Pose.pose.orientation.x = 0;
+        pickPose.request.Pose.pose.orientation.y = 0;
+        pickPose.request.Pose.pose.orientation.z = 0;
+        pickPose.request.Pose.pose.orientation.w = 1;
+        
+        /**************************/
         // pickPose.request.Pose.header.frame_id = "world";
         // pickPose.request.Pose.pose.position.x = 0.236844;
         // pickPose.request.Pose.pose.position.y = -0.403213;
@@ -182,9 +194,12 @@ void ReceptionRobot::actionGrasp()
         // pickPose.request.Pose.pose.orientation.y = -0.00911873;
         // pickPose.request.Pose.pose.orientation.z = 0.0931309;
         // pickPose.request.Pose.pose.orientation.w = 0.995507;
-        pickClient.call(pickPose);
+        /**************************/
+        // pickClient.call(pickPose);
         // fixedPickClient.call(pickPose);
         pick_place_bridge::PickPlacePose placePose;
+
+        /**************************/
         placePose.request.Pose.header.frame_id = "world";
         placePose.request.Pose.pose.position.x = 0.379353;
         placePose.request.Pose.pose.position.y = 0.687491;
@@ -197,7 +212,9 @@ void ReceptionRobot::actionGrasp()
         placePose.request.Pose.pose.orientation.y = 0.0432133;
         placePose.request.Pose.pose.orientation.z = 0.88249;
         placePose.request.Pose.pose.orientation.w = 0.466398;
+        /**************************/
 
+        /**************************/
         // placePose.request.Pose.pose.position.x = 0.95;
         // placePose.request.Pose.pose.position.y = -0.20;
         // placePose.request.Pose.pose.position.z = 1.51;
@@ -205,12 +222,15 @@ void ReceptionRobot::actionGrasp()
         // placePose.request.Pose.pose.orientation.y = 0.0136285;
         // placePose.request.Pose.pose.orientation.z = -0.0250326;
         // placePose.request.Pose.pose.orientation.w = 0.998868;
+        /**************************/
+
 
         // moveClient.call(placePose);
         // pick_place_bridge::PickPlacePose srv;
         // std_msgs::Empty emptryMsg;
         // detachObjectPub.publish(emptryMsg);
-        placeClient.call(placePose);
+        
+        // placeClient.call(placePose);
 
         backHome();
         setFiveFightPose(HOME);
