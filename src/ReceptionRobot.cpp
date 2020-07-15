@@ -113,9 +113,9 @@ bool ReceptionRobot::handDetectionDollCallback(rb_msgAndSrv::rb_DoubleBool::Requ
 
 bool ReceptionRobot::handClawGrabDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
 {
-    actionGrasp();
-    rep.respond = true;
-    return true;
+    // actionGrasp();
+    // rep.respond = true;
+    // return true;
 }
 
 void ReceptionRobot::updataPoseCallback(const std_msgs::Int8::ConstPtr& msg)
@@ -153,13 +153,13 @@ bool ReceptionRobot::PointTipServerCallback(reception_robot::listPose::Request& 
 void ReceptionRobot::objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg)
 {
 
-    std::vector<hirop_msgs::ObjectInfo>().swap(objectPose);
-    objectPose.resize(msg->objects.size());
-    for(int i=0; i < msg->objects.size(); ++i)
-    {
-        objectPose[i] = msg->objects[i];
+    // std::vector<hirop_msgs::ObjectInfo>().swap(objectPose);
+    // objectPose.resize(msg->objects.size());
+    // for(int i=0; i < msg->objects.size(); ++i)
+    // {
+    //     objectPose[i] = msg->objects[i];
         
-    }
+    // }
 }
 
 void ReceptionRobot::actionGrasp()
@@ -272,18 +272,17 @@ void ReceptionRobot::test()
 
     pose.request.Pose = detectionPose;
     moveClient.call(pose);
-    hirop_msgs::detection d;
-    d.request.detectorName = "Yolo6d";
-    d.request.detectorType = 1;
-    d.request.objectName = "toy1";
-    detectionClient.call(d);
-    pubStatus(!BUSY);
-    setFiveFightPose(HOME);
+    // hirop_msgs::detection d;
+    // d.request.detectorName = "Yolo6d";
+    // d.request.detectorType = 1;
+    // d.request.objectName = "toy1";
+    // detectionClient.call(d);
+    // pubStatus(!BUSY);
+    // setFiveFightPose(HOME);
 }
 
 bool ReceptionRobot::transformFrame(geometry_msgs::PoseStamped& poseStamped, std::string frame_id="world")
 {
-    moveit::planning_interface::MoveGroupInterface::Plan my_plan;
     geometry_msgs::PoseStamped* worldFramePose = new geometry_msgs::PoseStamped[1];
     geometry_msgs::PoseStamped* otherFramePose = new geometry_msgs::PoseStamped[1];
     tf::TransformListener listener;
