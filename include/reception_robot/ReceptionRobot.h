@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include <std_msgs/Int8.h>
+#include <std_msgs/Float32.h>
 
 
 #include "pick_place_bridge/PickPlacePose.h"
@@ -65,7 +66,7 @@ public:
     /**
      * @brief 用于抓娃娃测试
     */
-    void test();
+    bool test();
 
     /**
      * @brief 检查五指力矩是否超过阈值
@@ -105,7 +106,7 @@ private:
     recordLoadPose* recordLoadPosePtr;
     ros::NodeHandle& nh;
     // 服务回调
-    bool handClawGrabDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
+    // bool handClawGrabDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
     bool handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
     bool PointTipServerCallback(reception_robot::listPose::Request& req, reception_robot::listPose::Response& rep);
     bool handDetectionDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
@@ -134,7 +135,7 @@ private:
     // 检测
     ros::ServiceServer handDetectionDollServer;
     // 抓娃娃
-    ros::ServiceServer handClawGrabDollServer; 
+    // ros::ServiceServer handClawGrabDollServer; 
     // 握手
     ros::ServiceServer handgestureServer;
     // 记录点位的提示
