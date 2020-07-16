@@ -106,6 +106,7 @@ bool ReceptionRobot::handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request
 bool ReceptionRobot::handDetectionDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
 {
     rep.respond = test();
+    ROS_INFO_STREAM("handDetectionDollCallback:" << rep.respond << " ");
     return rep.respond;
 }
 
@@ -312,7 +313,7 @@ bool ReceptionRobot::transformFrame(geometry_msgs::PoseStamped& poseStamped, std
     poseStamped.pose.position.x += add[0];
     poseStamped.pose.position.y += add[1];
     poseStamped.pose.position.z += add[2];
-    if(poseStamped.header.frame_id == "world")
+    if(poseStamped.header.frame_id == frame_id)
     {
         return true;
     }
@@ -394,6 +395,7 @@ bool ReceptionRobot::moveHandgesturePose()
 
 bool ReceptionRobot::checkHandgestureLoop()
 {
+    ROS_INFO_STREAM("----------------------------");
     followSwitch(true);
     while(ros::ok() && !HandgestureMode);
     setFiveFightPose(SHAKE_PREPARE);
@@ -404,7 +406,6 @@ bool ReceptionRobot::checkHandgestureLoop()
         // 五指全部没感受到力矩 !checkForce() ||  || 超时10s || 六轴没有力矩 || 退出握手模式 cnt == 40 || isShakeOver || 
         if(!HandgestureMode)
         {
-            isShakeOver = false;
             setFiveFightPose(HOME);
             ROS_INFO_STREAM("exit setFiveFightPose ...");
             break;
@@ -416,6 +417,7 @@ bool ReceptionRobot::checkHandgestureLoop()
     // 等待退出握手模式, 且机器人状态正常
     for(int j=0; j<40; ++j)
     {
+        ROS_INFO_STREAM("---------isShakeOver:" << isShakeOver);
         if(isShakeOver && robotStatus)
         {
             setFiveFightPose(OK);
