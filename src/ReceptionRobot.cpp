@@ -50,6 +50,7 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     detachObjectPub = nh.advertise<std_msgs::Empty>("detach_object", 10);
     isOpenFollowPub = nh.advertise<std_msgs::Bool>("is_follow", 10);
     freeStatusPub = nh.advertise<std_msgs::Bool>("rbCtlBusy_status", 10);
+    isSetConstrainPub = nh.advertise<std_msgs::Bool>("is_setConstrain", 10);
     isShake = false;
     HandgestureMode = false;
     isShakeOver = false;
@@ -96,16 +97,17 @@ bool ReceptionRobot::handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request
 {
     // handgesture();
     // moveHandgesturePose();
-    pubStatus(BUSY);
+    pubConstrainState(true);
     movePose(handgesturePose);
-    pubStatus(!BUSY);
     rep.respond = checkHandgestureLoop();
+    pubConstrainState(false);
 	return rep.respond;
 }
 
 bool ReceptionRobot::handDetectionDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
 {
-    rep.respond = test();
+    pubConstrainState(false);
+    rep.respond = toDetect();
     ROS_INFO_STREAM("handDetectionDollCallback:" << rep.respond << " ");
     return rep.respond;
 }
@@ -254,14 +256,16 @@ void ReceptionRobot::actionGrasp()
 
 void ReceptionRobot::shakeOverCallback(const std_msgs::Bool::ConstPtr& msg)
 {
+    ROS_INFO_STREAM("--------------------------->> recevice shake over");
     isShakeOver = msg->data;
+    ROS_INFO_STREAM(isShakeOver);
 }
 
 /////////////////// 实现//////////////
 
 
 
-bool ReceptionRobot::test()
+bool ReceptionRobot::toDetect()
 {
     if(HandgestureMode)
         return false;
@@ -372,9 +376,11 @@ bool ReceptionRobot::setFiveFightPose(int index)
 
 bool ReceptionRobot::movePose(geometry_msgs::PoseStamped pose)
 {
+    pubStatus(BUSY);
     pick_place_bridge::PickPlacePose targetPose;
     targetPose.request.Pose = pose;
     moveClient.call(targetPose);
+    pubStatus(!BUSY);
     return targetPose.response.result;
 }
 
@@ -415,11 +421,14 @@ bool ReceptionRobot::checkHandgestureLoop()
     }
     followSwitch(false);
     // 等待退出握手模式, 且机器人状态正常
-    for(int j=0; j<40; ++j)
+    for(int j=0; j<80; ++j)
     {
         ROS_INFO_STREAM("---------isShakeOver:" << isShakeOver);
-        if(isShakeOver && robotStatus)
+        ROS_INFO_STREAM("------------wait for isShakeOver --------------");
+        if(isShakeOver)
         {
+            
+            ROS_INFO_STREAM("------------  ShakeOver --------------");
             setFiveFightPose(OK);
             movePose(OKPose);
             ros::WallDuration(3.0).sleep();
@@ -501,4 +510,11 @@ void ReceptionRobot::followSwitch(bool onOff)
     std_msgs::Bool msg;
     msg.data = onOff;
     isOpenFollowPub.publish(msg);
+}
+
+void ReceptionRobot::pubConstrainState(bool isSet)
+{
+    std_msgs::Bool msg;
+    msg.data = isSet;
+    isSetConstrainPub.publish(msg);
 }

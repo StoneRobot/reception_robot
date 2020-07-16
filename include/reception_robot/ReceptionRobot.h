@@ -66,7 +66,7 @@ public:
     /**
      * @brief 用于抓娃娃测试
     */
-    bool test();
+    bool toDetect();
 
     /**
      * @brief 检查五指力矩是否超过阈值
@@ -102,6 +102,8 @@ public:
 private:
 
     void actionGrasp();
+
+    void pubConstrainState(bool isSet);
 
     recordLoadPose* recordLoadPosePtr;
     ros::NodeHandle& nh;
@@ -170,6 +172,7 @@ private:
     ros::Publisher freeStatusPub;
     // 开启阻抗状态(不用)
     ros::Publisher isOpenFollowPub;
+    ros::Publisher isSetConstrainPub;
 
 
     // 判断六轴传感器是否有摇动信号
