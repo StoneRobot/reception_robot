@@ -29,7 +29,7 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     getForceClient = nh.serviceClient<hirop_msgs::getForce>("getForce");
     moveSeqClient = nh.serviceClient<hirop_msgs::moveSeqIndex>("moveSeq");
     getPoseClient = nh.serviceClient<pick_place_bridge::recordPose>("recordPose");
-    backHomeClient = nh.serviceClient<std_srvs::SetBool>("back_home");
+    backHomeClient = nh.serviceClient<std_srvs::SetBool>("/back_home");
     // 服务
     // handClawGrabDollServer = nh.advertiseService("handClaw_grabDoll", &ReceptionRobot::handClawGrabDollCallback, this);
     handgestureServer = nh.advertiseService("handClaw_shakeHand", &ReceptionRobot::handgestureSerCallback, this);
@@ -174,7 +174,7 @@ void ReceptionRobot::objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg
 void ReceptionRobot::actionGrasp()
 {
     ros::WallDuration(0.5).sleep();
-    pubStatus(BUSY);
+    // pubStatus(BUSY);
     for(int i=0; i<objectPose.size(); ++i)
     {
         // 坐标转换
@@ -258,7 +258,7 @@ void ReceptionRobot::actionGrasp()
         // }
 
     }
-    pubStatus(!BUSY);
+    // pubStatus(!BUSY);
 }
 
 void ReceptionRobot::shakeOverCallback(const std_msgs::Bool::ConstPtr& msg)
@@ -276,7 +276,7 @@ bool ReceptionRobot::toDetect()
 {
     if(HandgestureMode)
         return false;
-    pubStatus(BUSY);
+    // pubStatus(BUSY);
     setFiveFightPose(TAKE_PHOTO);
     followSwitch(false);
     pick_place_bridge::PickPlacePose pose;
@@ -383,7 +383,7 @@ bool ReceptionRobot::setFiveFightPose(int index)
 
 bool ReceptionRobot::movePose(geometry_msgs::PoseStamped pose)
 {
-    pubStatus(BUSY);
+    // pubStatus(BUSY);
     bool flag;
     pick_place_bridge::PickPlacePose targetPose;
     targetPose.request.Pose = pose;
@@ -404,7 +404,7 @@ bool ReceptionRobot::movePose(geometry_msgs::PoseStamped pose)
         }
         flag  = targetPose.response.result;
     }
-    pubStatus(!BUSY);
+    // pubStatus(!BUSY);
     return flag;
 }
 
@@ -523,8 +523,9 @@ void ReceptionRobot::pubStatus(bool isFree)
 
 bool ReceptionRobot::backHome()
 {
-    pubStatus(BUSY);
+    // pubStatus(BUSY);
     std_srvs::SetBool srv;
+    srv.request.data = true;
     if(!backHomeClient.call(srv))
     {
         ROS_INFO_STREAM("check back home server");
@@ -542,7 +543,7 @@ bool ReceptionRobot::backHome()
         }
         return srv.response.success;
     }
-    pubStatus(!BUSY);
+    // pubStatus(!BUSY);
 }
 
 void ReceptionRobot::followSwitch(bool onOff)
