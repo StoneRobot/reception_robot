@@ -29,7 +29,7 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     getForceClient = nh.serviceClient<hirop_msgs::getForce>("getForce");
     moveSeqClient = nh.serviceClient<hirop_msgs::moveSeqIndex>("moveSeq");
     getPoseClient = nh.serviceClient<pick_place_bridge::recordPose>("recordPose");
-    backHomeClient = nh.serviceClient<std_srvs::Empty>("back_home");
+    backHomeClient = nh.serviceClient<std_srvs::SetBool>("back_home");
     // 服务
     // handClawGrabDollServer = nh.advertiseService("handClaw_grabDoll", &ReceptionRobot::handClawGrabDollCallback, this);
     handgestureServer = nh.advertiseService("handClaw_shakeHand", &ReceptionRobot::handgestureSerCallback, this);
@@ -84,7 +84,14 @@ void ReceptionRobot::HandgestureModeCallback(const std_msgs::Bool::ConstPtr& msg
 
 void ReceptionRobot::backHomeCallback(const std_msgs::Int8::ConstPtr& msg)
 {
-    backHome();
+    if(backHome())
+    {
+        ROS_INFO_STREAM("back home success");
+    }
+    else
+    {
+        ROS_INFO_STREAM("back home faild");
+    }
 }
 
 void ReceptionRobot::robotStatusCallback(const std_msgs::Bool::ConstPtr& msg)
@@ -377,11 +384,28 @@ bool ReceptionRobot::setFiveFightPose(int index)
 bool ReceptionRobot::movePose(geometry_msgs::PoseStamped pose)
 {
     pubStatus(BUSY);
+    bool flag;
     pick_place_bridge::PickPlacePose targetPose;
     targetPose.request.Pose = pose;
-    moveClient.call(targetPose);
+    if(!moveClient.call(targetPose))
+    {
+        ROS_INFO_STREAM("check move pose server");
+        flag = false;
+    }
+    else
+    {
+        if(targetPose.response.result)
+        {
+            ROS_INFO_STREAM("move pose SUCCESS");
+        }
+        else
+        {
+            ROS_INFO_STREAM("move pose FAILED");
+        }
+        flag  = targetPose.response.result;
+    }
     pubStatus(!BUSY);
-    return targetPose.response.result;
+    return flag;
 }
 
 bool ReceptionRobot::moveHandgesturePose()
@@ -427,14 +451,14 @@ bool ReceptionRobot::checkHandgestureLoop()
         ROS_INFO_STREAM("------------wait for isShakeOver --------------");
         if(isShakeOver)
         {
-            
+            bool flag[2];
             ROS_INFO_STREAM("------------  ShakeOver --------------");
             setFiveFightPose(OK);
-            movePose(OKPose);
-            ros::WallDuration(3.0).sleep();
-            backHome();
+            flag[0] = movePose(OKPose);
+            ros::WallDuration(1.5).sleep();
+            flag[1] = backHome();
             setFiveFightPose(HOME);
-            return true;
+            return (flag[0] && flag[1]);
         }
         ros::WallDuration(0.25).sleep();
     }
@@ -497,11 +521,27 @@ void ReceptionRobot::pubStatus(bool isFree)
     freeStatusPub.publish(msg);
 }
 
-void ReceptionRobot::backHome()
+bool ReceptionRobot::backHome()
 {
     pubStatus(BUSY);
-    std_srvs::Empty srv;
-    backHomeClient.call(srv);
+    std_srvs::SetBool srv;
+    if(!backHomeClient.call(srv))
+    {
+        ROS_INFO_STREAM("check back home server");
+        return false;
+    }
+    else
+    {
+        if(srv.response.success)
+        {
+            ROS_INFO_STREAM("back home success");
+        }
+        else
+        {
+            ROS_INFO_STREAM("back home faild");
+        }
+        return srv.response.success;
+    }
     pubStatus(!BUSY);
 }
 

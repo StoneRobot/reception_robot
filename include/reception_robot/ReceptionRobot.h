@@ -6,6 +6,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Bool.h>
 #include <std_srvs/Empty.h>
+#include <std_srvs/SetBool.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -91,7 +92,7 @@ public:
     /**
      * @brief 回Home点
     */
-    void backHome();
+    bool backHome();
 
     /**
      *  @brief 随动的开关
