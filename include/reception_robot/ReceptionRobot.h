@@ -79,6 +79,11 @@ public:
     /**
     * @brief 设置夹爪动作
     * @param index 动作索引
+    * const int GRASP = 2;
+    * const int OK = 3;
+    * const int HOME = 4;
+    * const int SHAKE_PREPARE = 5;
+    * const int TAKE_PHOTO = 6;
     * @return 是否设置成功
     */
     bool setFiveFightPose(int index);
@@ -99,6 +104,10 @@ public:
      *  @param true为开
     */
     void followSwitch(bool onOff);
+
+    bool wave();
+
+    bool toOkPose();
     
 private:
 
@@ -113,6 +122,8 @@ private:
     bool handgestureSerCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
     bool PointTipServerCallback(reception_robot::listPose::Request& req, reception_robot::listPose::Response& rep);
     bool handDetectionDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep);
+    bool waveCallback(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& rep);
+    bool okCallback(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& rep);
     // 话题回调
     void pedestrainCallback(const std_msgs::Bool::ConstPtr& msg);
     void objectCallBack(const hirop_msgs::ObjectArray::ConstPtr& msg);
@@ -143,6 +154,8 @@ private:
     ros::ServiceServer handgestureServer;
     // 记录点位的提示
     ros::ServiceServer PointTipServer;
+    ros::ServiceServer waveServer;
+    ros::ServiceServer okServer;
 
     /****** 订阅 ******/
     // 抓取物体抓取姿态
@@ -202,6 +215,7 @@ private:
     std::string handgesturePosePath;
     // OK 点位路径
     std::string okPosePath;
+    std::string WavePosePath;
 
     // 检测点位
     geometry_msgs::PoseStamped detectionPose;
@@ -210,6 +224,7 @@ private:
     geometry_msgs::PoseStamped handgesturePose;
     // OK点位
     geometry_msgs::PoseStamped OKPose;
+    geometry_msgs::PoseStamped wavePose;
     // 工作信号
     const bool BUSY = true;
     std::vector<hirop_msgs::ObjectInfo> objectPose;

@@ -7,12 +7,14 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     nh.getParam("/reception_robot/detectionPose", detectionPosePath);
     nh.getParam("/reception_robot/handgesturePose", handgesturePosePath);
     nh.getParam("/reception_robot/ok", okPosePath);
+    nh.getParam("/reception_robot/wave", WavePosePath);
     try
     {
         /* code */
         recordLoadPosePtr->loadRobotPose(detectionPose, detectionPosePath);
         recordLoadPosePtr->loadRobotPose(handgesturePose, handgesturePosePath);
         recordLoadPosePtr->loadRobotPose(OKPose, okPosePath);
+        recordLoadPosePtr->loadRobotPose(wavePose, WavePosePath);
     }
     catch(const std::exception& e)
     {
@@ -35,6 +37,8 @@ ReceptionRobot::ReceptionRobot(ros::NodeHandle& n)
     handgestureServer = nh.advertiseService("handClaw_shakeHand", &ReceptionRobot::handgestureSerCallback, this);
     PointTipServer = nh.advertiseService("list_point",  &ReceptionRobot::PointTipServerCallback, this);
     handDetectionDollServer = nh.advertiseService("handClaw_detectDoll", &ReceptionRobot::handDetectionDollCallback, this);
+    waveServer = nh.advertiseService("wave_pose", &ReceptionRobot::waveCallback, this);
+    okServer = nh.advertiseService("ok_pose", &ReceptionRobot::okCallback, this);
     // 订阅
     objectArraySub = nh.subscribe<hirop_msgs::ObjectArray>("object_array", 1, &ReceptionRobot::objectCallBack, this);
     pedestrainSub = nh.subscribe("/pedestrian_detection", 10, &ReceptionRobot::pedestrainCallback, this);
@@ -119,6 +123,27 @@ bool ReceptionRobot::handDetectionDollCallback(rb_msgAndSrv::rb_DoubleBool::Requ
     return rep.respond;
 }
 
+bool ReceptionRobot::waveCallback(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& rep)
+{
+    if(req.data)
+    {
+        rep.success = wave();
+        return rep.success;
+    }
+    return false;
+}
+
+bool ReceptionRobot::okCallback(std_srvs::SetBool::Request& req, std_srvs::SetBool::Response& rep)
+{
+    bool flag=false;
+    if(req.data)
+    {
+        flag = toOkPose();
+        rep.success = flag;
+    }
+    return flag;
+}
+
 /**不用*/
 // bool ReceptionRobot::handClawGrabDollCallback(rb_msgAndSrv::rb_DoubleBool::Request& req, rb_msgAndSrv::rb_DoubleBool::Response& rep)
 // {
@@ -147,6 +172,10 @@ void ReceptionRobot::updataPoseCallback(const std_msgs::Int8::ConstPtr& msg)
             recordLoadPosePtr->recordRobotPose(pose, okPosePath);
             OKPose = pose;
             break;
+        case 3:
+            recordLoadPosePtr->recordRobotPose(pose, WavePosePath);
+            wavePose = pose;
+            break;
     }
 }
 
@@ -156,6 +185,7 @@ bool ReceptionRobot::PointTipServerCallback(reception_robot::listPose::Request& 
     rep.pose[0] = "detection pose index: 0";
     rep.pose[1] = "handgesture pose index: 1";
     rep.pose[2] = "OK pose index: 2";
+    rep.pose[3] = "wave pose index: 3";
     return true;
 }
 
@@ -558,4 +588,46 @@ void ReceptionRobot::pubConstrainState(bool isSet)
     std_msgs::Bool msg;
     msg.data = isSet;
     isSetConstrainPub.publish(msg);
+}
+
+bool ReceptionRobot::wave()
+{
+    pick_place_bridge::PickPlacePose srv;
+    srv.request.Pose = wavePose;
+    if(moveClient.call(srv))
+    {
+        setFiveFightPose(HOME);
+        if(srv.response.result)
+        {
+            ROS_INFO_STREAM("Reached the wave position successfully");
+        }
+        else
+        {
+            ROS_INFO_STREAM("Reached the wave position failed");
+        }
+        return srv.response.result;
+    }
+    return false;
+}
+
+bool ReceptionRobot::toOkPose()
+{
+    bool flag=false;
+    pick_place_bridge::PickPlacePose srv;
+    srv.request.Pose = OKPose;
+    if(moveClient.call(srv))
+    {
+        setFiveFightPose(OK);
+        if(srv.response.result)
+        {
+            ROS_INFO_STREAM("Reached the OK position successfully");
+        }
+        else
+        {
+            ROS_INFO_STREAM("Reached the OK position failed");
+        }
+        flag = srv.response.result;
+        setFiveFightPose(HOME);
+    }
+    return flag;
 }
