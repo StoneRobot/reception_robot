@@ -181,7 +181,7 @@ void ReceptionRobot::updataPoseCallback(const std_msgs::Int8::ConstPtr& msg)
 
 bool ReceptionRobot::PointTipServerCallback(reception_robot::listPose::Request& req, reception_robot::listPose::Response& rep)
 {
-    rep.pose.resize(3);
+    rep.pose.resize(4);
     rep.pose[0] = "detection pose index: 0";
     rep.pose[1] = "handgesture pose index: 1";
     rep.pose[2] = "OK pose index: 2";
@@ -615,9 +615,9 @@ bool ReceptionRobot::toOkPose()
     bool flag=false;
     pick_place_bridge::PickPlacePose srv;
     srv.request.Pose = OKPose;
+    setFiveFightPose(OK);
     if(moveClient.call(srv))
     {
-        setFiveFightPose(OK);
         if(srv.response.result)
         {
             ROS_INFO_STREAM("Reached the OK position successfully");
@@ -627,7 +627,7 @@ bool ReceptionRobot::toOkPose()
             ROS_INFO_STREAM("Reached the OK position failed");
         }
         flag = srv.response.result;
-        setFiveFightPose(HOME);
     }
+    setFiveFightPose(HOME);
     return flag;
 }
